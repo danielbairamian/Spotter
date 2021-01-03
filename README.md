@@ -1,4 +1,4 @@
-# Spotter
+#  :weight_lifting: Spotter
 
 ## OpenAI Gym visualisation tool. 
 
