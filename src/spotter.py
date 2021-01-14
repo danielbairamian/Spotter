@@ -1,5 +1,5 @@
 import copy
-
+import time
 '''Helper class that will hold per-agent information'''
 
 
@@ -46,7 +46,7 @@ class Spotter:
         self.agent_list = agent_list
         self.function_handle_list = function_handle_list
         self.create_agents()
-        disable_view_window()
+        # disable_view_window()
 
     """create Spotter agents"""
     def create_agents(self):
@@ -97,6 +97,7 @@ class Spotter:
 
 def run_agent_ep(agent):
     agent.last_frame = agent.env.render(mode="rgb_array")
+    time.sleep(0.005)
     action = agent.take_action(agent.obs)
     obs2, reward, done, _ = agent.env.step(action)
     agent.ep_reward += reward
