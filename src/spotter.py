@@ -1,7 +1,21 @@
 import copy
 import time
+import cv2
+
 '''Helper class that will hold per-agent information'''
 
+
+def video_writer(agent, id):
+    height = 400
+    width = 600
+
+    fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
+    fps = 30
+    video_filename = 'output'+str(id)+'.avi'
+    out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
+    for img in agent.frame_hist:
+        out.write(img)
+    out.release()
 
 def disable_view_window():
     from gym.envs.classic_control import rendering
@@ -10,7 +24,7 @@ def disable_view_window():
     def constructor(self, *args, **kwargs):
         org_constructor(self, *args, **kwargs)
         self.window.set_visible(visible=True)
-        self.window.set_location(-10000, -10000)
+        self.window.set_location(0, 0)
 
     rendering.Viewer.__init__ = constructor
 
@@ -27,6 +41,7 @@ class Spotter_Agent:
         self.env = None
         self.obs = None
         self.last_frame = None
+        self.frame_hist = []
 
     """sample action according to given function handle"""
     def take_action(self, obs):
@@ -65,12 +80,15 @@ class Spotter:
             agent.last_frame = None
 
     """run for number of episode"""
-    def run(self, num_eps=10):
+    def run(self, num_eps=3):
         print("Spotter started with", len(self.agent_list), "bros")
         for _ in range(num_eps):
             self.reset_agents()
             self.run_episode()
             self.save_run_hist()
+        for i, agent in enumerate(self.spotter_agents):
+            video_writer(agent, i)
+
 
     """per episode run"""
     def run_episode(self):
@@ -97,7 +115,7 @@ class Spotter:
 
 def run_agent_ep(agent):
     agent.last_frame = agent.env.render(mode="rgb_array")
-    time.sleep(0.005)
+    agent.frame_hist.append(agent.last_frame)
     action = agent.take_action(agent.obs)
     obs2, reward, done, _ = agent.env.step(action)
     agent.ep_reward += reward
