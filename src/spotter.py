@@ -5,12 +5,21 @@ import numpy as np
 
 '''Helper class that will hold per-agent information'''
 
+
 def stack_renders(agent1, agent2):
     frame_hist1 = np.asarray(agent1.frame_hist)
     frame_hist2 = np.asarray(agent2.frame_hist)
     stacked_render = np.minimum(frame_hist1, frame_hist2)
     video_writer(stacked_render, 3)
 
+
+def recolor_hist(agent, target_color, new_color):
+    for img in agent.frame_hist:
+        for row in range(img.shape[0]):
+            for col in range(img.shape[1]):
+                pixel = img[row][col]
+                if (pixel == target_color).all():
+                    img[row][col] = new_color
 
 
 def video_writer(frame_history, id):
@@ -100,6 +109,7 @@ class Spotter:
             self.save_run_hist()
         for i, agent in enumerate(self.spotter_agents):
             video_writer(agent.frame_hist, i)
+        recolor_hist(self.spotter_agents[1], np.array([127, 127, 127]), np.array([0, 0, 255]))
         stack_renders(self.spotter_agents[0], self.spotter_agents[1])
 
 
