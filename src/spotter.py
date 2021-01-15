@@ -1,11 +1,19 @@
 import copy
 import time
 import cv2
+import numpy as np
 
 '''Helper class that will hold per-agent information'''
 
+def stack_renders(agent1, agent2):
+    frame_hist1 = np.asarray(agent1.frame_hist)
+    frame_hist2 = np.asarray(agent2.frame_hist)
+    stacked_render = np.minimum(frame_hist1, frame_hist2)
+    video_writer(stacked_render, 3)
 
-def video_writer(agent, id):
+
+
+def video_writer(frame_history, id):
     height = 400
     width = 600
 
@@ -13,7 +21,7 @@ def video_writer(agent, id):
     fps = 30
     video_filename = 'output'+str(id)+'.avi'
     out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
-    for img in agent.frame_hist:
+    for img in frame_history:
         out.write(img)
     out.release()
 
@@ -48,6 +56,10 @@ class Spotter_Agent:
         action = getattr(self.agent, self.function_handle)(obs)
         return action
 
+    """repeat last frame of rendering for synchronization"""
+    def repeat_frame(self):
+        self.frame_hist.append(self.last_frame)
+
 
 '''Main Spotter class that will sync all runs'''
 
@@ -61,7 +73,7 @@ class Spotter:
         self.agent_list = agent_list
         self.function_handle_list = function_handle_list
         self.create_agents()
-        # disable_view_window()
+        disable_view_window()
 
     """create Spotter agents"""
     def create_agents(self):
@@ -87,7 +99,8 @@ class Spotter:
             self.run_episode()
             self.save_run_hist()
         for i, agent in enumerate(self.spotter_agents):
-            video_writer(agent, i)
+            video_writer(agent.frame_hist, i)
+        stack_renders(self.spotter_agents[0], self.spotter_agents[1])
 
 
     """per episode run"""
@@ -98,6 +111,7 @@ class Spotter:
                 if not agent.is_done_ep:
                     run_agent_ep(agent)
                 else:
+                    agent.repeat_frame()
                     done_counter += 1
 
             """if all agents finished their run, break"""
