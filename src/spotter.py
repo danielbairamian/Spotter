@@ -31,6 +31,7 @@ def video_writer(frame_history, id):
     video_filename = 'output'+str(id)+'.avi'
     out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
     for img in frame_history:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         out.write(img)
     out.release()
 
