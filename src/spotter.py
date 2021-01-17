@@ -23,8 +23,8 @@ def recolor_hist(agent, target_color, new_color):
 
 
 def video_writer(frame_history, id):
-    height = 400
-    width = 600
+    height = np.shape(frame_history)[1]
+    width = np.shape(frame_history)[2]
 
     fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
     fps = 30
