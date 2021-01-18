@@ -6,11 +6,11 @@ import numpy as np
 '''Helper class that will hold per-agent information'''
 
 
-def stack_renders(agent1, agent2):
+def stack_renders(agent1, agent2, env_name):
     frame_hist1 = np.asarray(agent1.frame_hist)
     frame_hist2 = np.asarray(agent2.frame_hist)
     stacked_render = np.minimum(frame_hist1, frame_hist2)
-    video_writer(stacked_render, 3)
+    video_writer(stacked_render, 999, env_name + "_stacked")
 
 
 def recolor_hist(agent, target_color, new_color):
@@ -22,13 +22,13 @@ def recolor_hist(agent, target_color, new_color):
                     img[row][col] = new_color
 
 
-def video_writer(frame_history, id):
+def video_writer(frame_history, id, env_name):
     height = np.shape(frame_history)[1]
     width = np.shape(frame_history)[2]
 
     fourcc = cv2.VideoWriter_fourcc('M','J','P','G')
     fps = 30
-    video_filename = 'output'+str(id)+'.avi'
+    video_filename = env_name + '_output'+str(id)+'.avi'
     out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
     for img in frame_history:
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
@@ -76,8 +76,9 @@ class Spotter_Agent:
 
 class Spotter:
     """initialize spotter"""
-    def __init__(self, env, agent_list, function_handle_list):
+    def __init__(self, env, env_name, agent_list, function_handle_list):
         self.env = env
+        self.env_name = env_name
         self.ep_max_length = env._max_episode_steps
         self.spotter_agents = []
         self.agent_list = agent_list
@@ -102,16 +103,16 @@ class Spotter:
             agent.last_frame = None
 
     """run for number of episode"""
-    def run(self, num_eps=3):
+    def run(self, num_eps=10):
         print("Spotter started with", len(self.agent_list), "bros")
         for _ in range(num_eps):
             self.reset_agents()
             self.run_episode()
             self.save_run_hist()
         for i, agent in enumerate(self.spotter_agents):
-            video_writer(agent.frame_hist, i)
-        recolor_hist(self.spotter_agents[1], np.array([127, 127, 127]), np.array([0, 0, 255]))
-        stack_renders(self.spotter_agents[0], self.spotter_agents[1])
+            video_writer(agent.frame_hist, i, self.env_name)
+        # recolor_hist(self.spotter_agents[1], np.array([204, 76, 76]), np.array([0, 0, 255]))
+        stack_renders(self.spotter_agents[0], self.spotter_agents[1], self.env_name)
 
 
     """per episode run"""
