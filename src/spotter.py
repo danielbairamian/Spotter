@@ -10,7 +10,7 @@ def stack_renders(agent1, agent2, env_name):
     frame_hist1 = np.asarray(agent1.frame_hist)
     frame_hist2 = np.asarray(agent2.frame_hist)
     stacked_render = np.minimum(frame_hist1, frame_hist2)
-    video_writer(stacked_render, 999, env_name + "_stacked")
+    video_writer(stacked_render, 999, env_name + "_PISAS_stacked")
 
 
 def recolor_hist(agent, target_color, new_color):
@@ -48,16 +48,18 @@ def disable_view_window():
 
 
 class Spotter_Agent:
-    def __init__(self, agent, function_handle):
+    def __init__(self, agent, function_handle, memory_input):
         """disable view window moves renders outside canvas so we don't see them
             There might be a better way to do this"""
         self.agent = agent
         self.function_handle = function_handle
+        self.memory_input = memory_input
         self.ep_reward_hist = []
         self.ep_reward = 0
         self.is_done_ep = False
         self.env = None
         self.obs = None
+        self.init_state = None
         self.last_frame = None
         self.frame_hist = []
 
@@ -76,20 +78,21 @@ class Spotter_Agent:
 
 class Spotter:
     """initialize spotter"""
-    def __init__(self, env, env_name, agent_list, function_handle_list):
+    def __init__(self, env, env_name, agent_list, function_handle_list, memory_list):
         self.env = env
         self.env_name = env_name
         self.ep_max_length = env._max_episode_steps
         self.spotter_agents = []
         self.agent_list = agent_list
         self.function_handle_list = function_handle_list
+        self.memory_list = memory_list
         self.create_agents()
         disable_view_window()
 
     """create Spotter agents"""
     def create_agents(self):
         for i in range(len(self.agent_list)):
-            spotter_agent = Spotter_Agent(self.agent_list[i], self.function_handle_list[i])
+            spotter_agent = Spotter_Agent(self.agent_list[i], self.function_handle_list[i], self.memory_list[i])
             self.spotter_agents.append(spotter_agent)
 
     """reset agents for every episode"""
@@ -98,12 +101,13 @@ class Spotter:
         for agent in self.spotter_agents:
             agent.ep_reward = 0
             agent.is_done_ep = False
+            agent.init_state = init_obs
             agent.env = copy.deepcopy(self.env)
             agent.obs = init_obs
             agent.last_frame = None
 
     """run for number of episode"""
-    def run(self, num_eps=10):
+    def run(self, num_eps=5):
         print("Spotter started with", len(self.agent_list), "bros")
         for _ in range(num_eps):
             self.reset_agents()
@@ -111,7 +115,7 @@ class Spotter:
             self.save_run_hist()
         for i, agent in enumerate(self.spotter_agents):
             video_writer(agent.frame_hist, i, self.env_name)
-        # recolor_hist(self.spotter_agents[1], np.array([204, 76, 76]), np.array([0, 0, 255]))
+        recolor_hist(self.spotter_agents[1], np.array([204, 76, 76]), np.array([0, 0, 255]))
         stack_renders(self.spotter_agents[0], self.spotter_agents[1], self.env_name)
 
 
@@ -142,7 +146,10 @@ class Spotter:
 def run_agent_ep(agent):
     agent.last_frame = agent.env.render(mode="rgb_array")
     agent.frame_hist.append(agent.last_frame)
-    action = agent.take_action(agent.obs)
+    if agent.memory_input:
+        action = agent.take_action(np.hstack((agent.obs, agent.init_state)))
+    else:
+        action = agent.take_action(agent.obs)
     obs2, reward, done, _ = agent.env.step(action)
     agent.ep_reward += reward
     agent.obs = obs2
