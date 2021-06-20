@@ -10,7 +10,7 @@ def stack_renders(agent1, agent2, env_name):
     frame_hist1 = np.asarray(agent1.frame_hist)
     frame_hist2 = np.asarray(agent2.frame_hist)
     stacked_render = np.minimum(frame_hist1, frame_hist2)
-    video_writer(stacked_render, 999, env_name + "_PISAS_stacked")
+    video_writer(stacked_render, 3, env_name + "_stacked")
 
 
 def recolor_hist(agent, target_color, new_color):
