@@ -1,16 +1,16 @@
 import copy
-import time
 import cv2
 import numpy as np
 
 '''Helper class that will hold per-agent information'''
 
 
-def stack_renders(agent1, agent2, env_name):
-    frame_hist1 = np.asarray(agent1.frame_hist)
-    frame_hist2 = np.asarray(agent2.frame_hist)
-    stacked_render = np.minimum(frame_hist1, frame_hist2)
-    video_writer(stacked_render, 3, env_name + "_stacked")
+def stack_renders(agents, env_name):
+
+    stacked_render = np.asarray(agents[0].frame_hist)
+    for agent in agents:
+        stacked_render = np.minimum(stacked_render, agent.frame_hist)
+    video_writer(stacked_render, len(agents), env_name + "_stacked")
 
 
 def recolor_hist(agent, target_color, new_color):
@@ -34,6 +34,7 @@ def video_writer(frame_history, id, env_name):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         out.write(img)
     out.release()
+
 
 def disable_view_window():
     from gym.envs.classic_control import rendering
@@ -78,7 +79,14 @@ class Spotter_Agent:
 
 class Spotter:
     """initialize spotter"""
-    def __init__(self, env, env_name, agent_list, function_handle_list, memory_list):
+    """
+    Recolor Info: a tuple containing
+        - Agent ID - Integer - (position in array starting at 0)
+        - Target Pixel Color: The Pixel Color we want to recolor 
+        - New Pixel Color: The Pixel Color we want the recolor to be
+    """
+    def __init__(self, env, env_name, agent_list, function_handle_list, memory_list, individual_render=False,
+                 recolor_render=False, recolor_info=None):
         self.env = env
         self.env_name = env_name
         self.ep_max_length = env._max_episode_steps
@@ -86,6 +94,9 @@ class Spotter:
         self.agent_list = agent_list
         self.function_handle_list = function_handle_list
         self.memory_list = memory_list
+        self.individual_render = individual_render
+        self.recolor_render = recolor_render
+        self.recolor_info = recolor_info
         self.create_agents()
         disable_view_window()
 
@@ -113,11 +124,16 @@ class Spotter:
             self.reset_agents()
             self.run_episode()
             self.save_run_hist()
-        for i, agent in enumerate(self.spotter_agents):
-            video_writer(agent.frame_hist, i, self.env_name)
-        recolor_hist(self.spotter_agents[1], np.array([204, 76, 76]), np.array([0, 0, 255]))
-        stack_renders(self.spotter_agents[0], self.spotter_agents[1], self.env_name)
 
+        if self.individual_render:
+            for i, agent in enumerate(self.spotter_agents):
+               video_writer(agent.frame_hist, i, self.env_name)
+
+        if self.recolor_render:
+            for info in self.recolor_info:
+                recolor_hist(self.spotter_agents[info[0]], np.array(info[1]), np.array(info[2]))
+
+        stack_renders(self.spotter_agents, self.env_name)
 
     """per episode run"""
     def run_episode(self):
