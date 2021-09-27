@@ -125,13 +125,13 @@ class Spotter:
             self.run_episode()
             self.save_run_hist()
 
-        if self.individual_render:
-            for i, agent in enumerate(self.spotter_agents):
-               video_writer(agent.frame_hist, i, self.env_name)
-
         if self.recolor_render:
             for info in self.recolor_info:
                 recolor_hist(self.spotter_agents[info[0]], np.array(info[1]), np.array(info[2]))
+
+        if self.individual_render:
+            for i, agent in enumerate(self.spotter_agents):
+               video_writer(agent.frame_hist, i, self.env_name)
 
         stack_renders(self.spotter_agents, self.env_name)
 
